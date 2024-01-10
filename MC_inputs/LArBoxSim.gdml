@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+  <define>
+    <position name="in_fid_vol_1intoppos" x="0" y="0" z="-68" unit="cm"/>
+    <position name="non_fid_vol_1intoppos" x="0" y="0" z="0" unit="cm"/>
+  </define>
+  <materials>
+    <material name="vacuum" Z="1">
+      <D unit="g/cm3" value="0"/>
+      <atom unit="g/mole" value="0"/>
+    </material>
+    <material name="lar" Z="18">
+      <D unit="g/cm3" value="1.3954"/>
+      <atom unit="g/mole" value="39.948"/>
+    </material>
+  </materials>
+  <solids>
+    <box name="top" x="3000" y="2600" z="11700" lunit="cm"/>
+    <box name="in_fid_box" x="1320" y="1100" z="5614" lunit="cm"/>
+    <box name="active_box" x="1400" y="1200" z="5750" lunit="cm"/>
+    <subtraction name="non_fid_box">
+      <first ref="active_box"/>
+      <second ref="in_fid_box"/>
+      <position name="non_fid_boxin_fid_boxpos" x="0" y="0" z="-68" unit="cm"/>
+    </subtraction>
+  </solids>
+  <structure>
+    <volume name="in_fid_vol">
+      <materialref ref="lar"/>
+      <solidref ref="in_fid_box"/>
+    </volume>
+    <volume name="non_fid_vol">
+      <materialref ref="lar"/>
+      <solidref ref="non_fid_box"/>
+    </volume>
+    <volume name="top">
+      <materialref ref="vacuum"/>
+      <solidref ref="top"/>
+      <physvol name="in_fid_vol_1" copynumber="1">
+        <volumeref ref="in_fid_vol"/>
+        <positionref ref="in_fid_vol_1intoppos"/>
+      </physvol>
+      <physvol name="non_fid_vol_1" copynumber="1">
+        <volumeref ref="non_fid_vol"/>
+        <positionref ref="non_fid_vol_1intoppos"/>
+      </physvol>
+    </volume>
+  </structure>
+  <setup name="default" version="1.0">
+    <world ref="top"/>
+  </setup>
+</gdml>
