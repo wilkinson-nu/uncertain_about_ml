@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --image=docker:wilkinsonnu/nuisance_project:geniev340_g4_sim
 #SBATCH --qos=shared
-#SBATCH --constraint=haswell
-#SBATCH --time=300
+#SBATCH --constraint=cpu
+#SBATCH --time=600
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --mem=2GB
