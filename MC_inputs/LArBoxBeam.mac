@@ -1,3 +1,6 @@
+/edep/phys/ionizationModel 0
+/edep/update
+
 /generator/kinematics/set rooTracker
 /generator/kinematics/rooTracker/input gntp.0.roo.root
 /generator/position/set free

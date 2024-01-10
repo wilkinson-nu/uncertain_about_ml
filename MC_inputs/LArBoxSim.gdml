@@ -26,10 +26,12 @@
   </solids>
   <structure>
     <volume name="in_fid_vol">
+      <auxiliary auxtype="SensDet" auxvalue="in_fid_vol"/>
       <materialref ref="lar"/>
       <solidref ref="in_fid_box"/>
     </volume>
     <volume name="non_fid_vol">
+      <auxiliary auxtype="SensDet" auxvalue="non_fid_vol"/>
       <materialref ref="lar"/>
       <solidref ref="non_fid_box"/>
     </volume>
