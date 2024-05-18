@@ -1,0 +1,117 @@
+FROM deeplearnphysics/larcv2:ub20.04-cuda12.1-pytorch2.2.1
+
+LABEL maintainer="drinkingkazu"
+LABEL contact="contact@deeplearnphysics.org"
+LABEL type="gpu"
+LABEL version="ub20.04-cuda12.1-pytorch2.2.1-extra"
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# for user-specific temporary files
+ENV XDG_RUNTIME_DIR=/tmp/$USER
+
+# root
+ENV ROOTSYS=/app/root
+ENV PATH="${ROOTSYS}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${ROOTSYS}/lib:${LD_LIBRARY_PATH}"
+ENV PYTHONPATH="${ROOTSYS}/lib:${PYTHONPATH}"
+
+# larcv build
+ENV LARCV_BASEDIR=/app/larcv2
+ENV LARCV_BUILDDIR="${LARCV_BASEDIR}/build"
+ENV LARCV_COREDIR="${LARCV_BASEDIR}/larcv/core"
+ENV LARCV_APPDIR="${LARCV_BASEDIR}/larcv/app"
+ENV LARCV_LIBDIR="${LARCV_BUILDDIR}/lib"
+ENV LARCV_INCDIR="${LARCV_BUILDDIR}/include"
+ENV LARCV_BINDIR="${LARCV_BUILDDIR}/bin"
+ENV LARCV_ROOT6=1
+ENV LARCV_CXX=g++
+
+# with numpy
+ENV LARCV_NUMPY=1
+ENV LARCV_PYTHON=/usr/bin/python3
+ENV LARCV_PYTHON_CONFIG=python3.8-config
+ENV LARCV_INCLUDES=" -I/app/larcv2/build/include -I/usr/include/python3.8  -I/usr/local/lib/python3.8/dist-packages/numpy/core/include"
+ENV LARCV_LIBS=" -L/usr/lib/ -L/usr/lib/python3.8/config-3.8-x86_64-linux-gnu -L/usr/lib  -lcrypt -lpthread -ldl  -lutil -lm -L/app/larcv2/build/lib -llarcv"
+
+# set bin and lib path
+ENV PATH=${LARCV_BASEDIR}/bin:${LARCV_BINDIR}:${PATH}
+ENV LD_LIBRARY_PATH=${LARCV_LIBDIR}:${LD_LIBRARY_PATH}:
+ENV PYTHONPATH=${LARCV_BASEDIR}/python:${PYTHONPATH}
+
+# Need to update package lists
+RUN apt-get update
+
+# ROOT
+RUN pip install gdown && \
+    mkdir -p /app && \
+    apt-get -y install cmake libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev
+
+# Pythia6
+RUN apt-get -y install gfortran && \
+    cd /app && \
+    wget --no-check-certificate http://root.cern.ch/download/pythia6.tar.gz && \
+    tar -xzvf pythia6.tar.gz && \
+    rm pythia6.tar.gz && \
+    wget --no-check-certificate https://pythia.org/download/pythia6/pythia6428.f && \
+    mv pythia6428.f pythia6/pythia6428.f && \
+    rm pythia6/pythia6416.f && \
+    cd pythia6 && \
+    ./makePythia6.linuxx8664
+
+# Build ROOT from source (v6.22.08) +Mathmore +Pythia6, and avoid a load of builtins
+RUN apt-get -y install libxxhash-dev liblz4-dev libgl2ps-dev libxml2-dev libpcre3-dev libfftw3-dev libgsl-dev liblzma-dev libzstd-dev libafterimage-dev libtbb-dev
+
+RUN cd /app && \
+    git clone -b v6-22-08 --depth 1 --single-branch https://github.com/root-project/root.git root_src && \
+    mkdir /app/root && \
+    cd /app/root && \
+    cmake -DPYTHIA6_LIBRARY=/app/pythia6/libPythia6.so \
+    	  -DCMAKE_CXX_STANDARD=11 \
+	  -Dpythia6=ON \
+	  -Dminuit2=ON \
+	  -Dmathmore=ON \
+	  -Ddavix=OFF \
+    	  -Dfitsio=OFF \
+	  -Dgfal=OFF \
+	  -Dcastor=OFF \
+	  -Dclad=ON \
+	  -Dhttp=ON \
+	  -Droot7=OFF \
+	  -Dwebgui=OFF \
+	  -Dxrootd=ON \
+	  -Dmlp=ON \
+	  -Dimt=ON \
+	  -Droofit=ON \
+	  -Dmysql=OFF \
+	  -Doracle=OFF \
+	  -Dpgsql=OFF \
+	  -Dspectrum=ON \
+	  -Dsqlite=OFF \
+	  -Ddataframe=ON \
+	  -Dtmva=ON \
+	  -Dtmva-cpu=ON \
+	  -Dopengl=OFF \
+	  -Dtmva-pymva=ON \
+	  -Dssl=ON \
+	  -Dcudnn=OFF \
+	  -Dexceptions=ON \
+	  -Dgdml=ON \
+	  -Dbuiltin_clang=ON \
+	  -DPYTHON_EXECUTABLE=/usr/bin/python \
+	  -Dpython3=ON \
+	  /app/root_src && \
+	  make -j4 && make install && \
+	  rm -r /app/root_src
+
+
+# Now larcv
+RUN pip3 --no-cache-dir install rootpy root_numpy uproot && \
+    cd /app && \
+    git clone https://github.com/DeepLearnPhysics/larcv2 && \
+    cd larcv2 && \
+    mkdir -p $LARCV_BUILDDIR && \
+    mkdir -p $LARCV_LIBDIR && \
+    mkdir -p $LARCV_BINDIR && \
+    make -j4 && \
+    apt-get autoremove -y && apt-get clean -y

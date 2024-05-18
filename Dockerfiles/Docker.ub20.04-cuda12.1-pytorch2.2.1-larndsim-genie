@@ -1,0 +1,155 @@
+#FROM deeplearnphysics/larcv2:ub20.04-cuda12.1-pytorch2.2.1-extra
+FROM wilkinsonnu/larcv2:ub20.04-cuda12.1-pytorch2.2.1-extra_modroot
+
+LABEL maintainer="drinkingkazu"
+LABEL contact="contact@deeplearnphysics.org"
+LABEL type="gpu"
+LABEL version="ub20.04-cuda12.1-pytorch2.2.1-larndsim"
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ENV XDG_RUNTIME_DIR=/tmp/$USER
+
+# root
+ENV ROOTSYS=/app/root
+ENV PATH="${ROOTSYS}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${ROOTSYS}/lib:${LD_LIBRARY_PATH}"
+ENV PYTHONPATH="${ROOTSYS}/lib:${PYTHONPATH}"
+
+# geant4
+ENV PATH="/app/geant4/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/app/geant4/lib:${LD_LIBRARY_PATH}"
+
+#edepsim
+ENV PATH="/app/edep/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/app/edep/lib:${LD_LIBRARY_PATH}"
+
+# larcv
+ENV LARCV_BASEDIR=/app/larcv2
+ENV LARCV_BUILDDIR="${LARCV_BASEDIR}/build"
+ENV LARCV_COREDIR="${LARCV_BASEDIR}/larcv/core"
+ENV LARCV_APPDIR="${LARCV_BASEDIR}/larcv/app"
+ENV LARCV_LIBDIR="${LARCV_BUILDDIR}/lib"
+ENV LARCV_INCDIR="${LARCV_BUILDDIR}/include"
+ENV LARCV_BINDIR="${LARCV_BUILDDIR}/bin"
+ENV LARCV_ROOT6=1
+ENV LARCV_CXX=g++
+
+# with numpy
+ENV LARCV_NUMPY=1
+ENV LARCV_PYTHON=/usr/bin/python3
+ENV LARCV_PYTHON_CONFIG=python3.8-config
+ENV LARCV_INCLUDES=" -I/app/larcv2/build/include -I/usr/include/python3.8  -I/usr/local/lib/python3.8/dist-packages/numpy/core/include"
+ENV LARCV_LIBS=" -L/usr/lib/ -L/usr/lib/python3.8/config-3.8-x86_64-linux-gnu -L/usr/lib  -lcrypt -lpthread -ldl  -lutil -lm -L/app/larcv2/build/lib -llarcv"
+
+# DLPGenerator
+ENV DLPGENERATOR_ROOT6=1
+ENV DLPGENERATOR_CXX=g++
+ENV DLPGENERATOR_NUMPY=1
+ENV DLPGENERATOR_DIR=/app/DLPGenerator
+ENV DLPGENERATOR_BINDIR="${DLPGENERATOR_DIR}/bin"
+ENV DLPGENERATOR_INCDIR="${DLPGENERATOR_DIR}/build/include"
+ENV DLPGENERATOR_BUILDDIR="${DLPGENERATOR_DIR}/build"
+ENV DLPGENERATOR_LIBDIR="${DLPGENERATOR_DIR}/build/lib"
+
+# set bin and lib path
+ENV PATH=${LARCV_BASEDIR}/bin:${LARCV_BINDIR}:${DLPGENERATOR_BINDIR}:${PATH}
+ENV LD_LIBRARY_PATH=${LARCV_LIBDIR}:${DLPGENERATOR_LIBDIR}:${LD_LIBRARY_PATH}:
+ENV PYTHONPATH=${LARCV_BASEDIR}/python:${DLPGENERATOR_DIR}/python:${PYTHONPATH}
+
+# for geant4
+ENV G4NEUTRONHPDATA="/app/geant4/share/Geant4-10.6.3/data/G4NDL4.6"
+ENV G4LEDATA="/app/geant4/share/Geant4-10.6.3/data/G4EMLOW7.9.1"
+ENV G4LEVELGAMMADATA="/app/geant4/share/Geant4-10.6.3/data/PhotonEvaporation5.5"
+ENV G4RADIOACTIVEDATA="/app/geant4/share/Geant4-10.6.3/data/RadioactiveDecay5.4"
+ENV G4PARTICLEXSDATA="/app/geant4/share/Geant4-10.6.3/data/G4PARTICLEXS2.1"
+ENV G4PIIDATA="/app/geant4/share/Geant4-10.6.3/data/G4PII1.3"
+ENV G4REALSURFACEDATA="/app/geant4/share/Geant4-10.6.3/data/RealSurface2.1.1"
+ENV G4SAIDXSDATA="/app/geant4/share/Geant4-10.6.3/data/G4SAIDDATA2.0"
+ENV G4ABLADATA="/app/geant4/share/Geant4-10.6.3/data/G4ABLA3.1"
+ENV G4INCLDATA="/app/geant4/share/Geant4-10.6.3/data/G4INCL1.0"
+ENV G4ENSDFSTATEDATA="/app/geant4/share/Geant4-10.6.3/data/G4ENSDFSTATE2.2"
+
+# LHAPDF
+ENV PYTHONPATH=/app/LHAPDF/lib/python3.9/site-packages:${PYTHONPATH}
+ENV PATH=/app/LHAPDF/bin:$PATH
+ENV LD_LIBRARY_PATH=/app/LHAPDF/lib:$LD_LIBRARY_PATH
+ENV LHAPATH=/app/LHAPDF/include/LHAPDF
+
+# GENIE
+ENV GENIE=/app/GENIE
+ENV PATH=$GENIE/bin:${PATH}
+ENV LD_LIBRARY_PATH=/usr/lib:/app/pythia6:$GENIE/lib:$LD_LIBRARY_PATH
+
+# Geant4
+RUN mkdir -p /app && \
+    gdown https://drive.google.com/uc?id=1zrmjvIDXpoiHvZ3pIkeaCMnVaQk2SY-x -O geant4.tar.gz && \
+    tar -xzf geant4.tar.gz && \
+    rm geant4.tar.gz && \
+    mv geant4.10.06.p03-install /app/geant4 && \
+    cd /app && \
+    git clone https://github.com/DeepLearnPhysics/DLPGenerator && \
+    cd DLPGenerator && \
+    make &&\
+    cd /app && \
+    mkdir -p edep-build /app/edep /source && \
+    apt-get -y install libyaml-cpp-dev && \
+    git clone https://github.com/lbl-neutrino/edep-sim && cd edep-sim && git checkout bomb && cd - && \
+    mv edep-sim /source/edep && \
+    cd edep-build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/app/edep -DEDEPSIM_DISPLAY=OFF /source/edep && \
+    make && make install && \
+    cd .. && rm -r edep-build && \
+    mkdir -p /app/lfs && cd /app/lfs && \
+    wget https://github.com/git-lfs/git-lfs/releases/download/v3.4.1/git-lfs-linux-amd64-v3.4.1.tar.gz &&\
+    tar -xvf git-lfs-linux-amd64-v3.4.1.tar.gz && \
+    apt-get install git-lfs && \
+    cd /app && \
+    git clone https://github.com/DUNE/larnd-sim.git && cd larnd-sim && git checkout develop && \
+    git lfs pull && \
+    export SKIP_CUPY_INSTALL=1 && pip3 install --no-cache-dir . && \
+    cd /app && git clone -b main https://github.com/larpix/h5flow.git && \
+    cd h5flow && pip install --no-cache-dir . && \
+    apt-get autoremove -y && apt-get clean -y
+
+# LHAPDF6 (GENIE requirement)
+RUN mkdir /app/LHAPDF && \
+    cd /app/LHAPDF && \
+    wget https://lhapdf.hepforge.org/downloads/LHAPDF-6.5.1.tar.gz && \
+    tar xzf LHAPDF-6.5.1.tar.gz && \
+    rm LHAPDF-6.5.1.tar.gz && \
+    cd LHAPDF-6.5.1 && \
+    ./configure --prefix=/app/LHAPDF && \
+    make && make install && \
+    rm -r /app/LHAPDF/LHAPDF-6.5.1
+
+# GENIE
+RUN apt-get -y install liblog4cpp5-dev && \
+    git clone -b R-3_04_00 --depth 1 --single-branch https://github.com/GENIE-MC/Generator.git /app/GENIE && \
+    cd /app/GENIE && \
+    ./configure --enable-debug \
+    		--enable-fnal \
+		--disable-rwght \
+		--enable-lhapdf6 \
+		--disable-lhapdf5 \
+		--disable-apfel \
+		--with-pythia6-lib=/app/pythia6 \
+		--with-lhapdf6-inc=/app/LHAPDF/include \
+		--with-lhapdf6-lib=/app/LHAPDF/lib \
+		--with-libxml2-inc=/usr/include/libxml2 \
+		--with-libxml2-lib=/usr/lib \
+		--with-log4cpp-inc=/usr/include \
+		--with-log4cpp-lib=/usr/lib \
+		--enable-gfortran \
+		--with-gfortran-lib=/lib/x86_64-linux-gnu \
+		--prefix=/app/GENIE/install && \
+		make -j4 && make install
+
+# Mess around to shut GENIE up when it runs
+RUN cp ${GENIE}/config/Messenger_whisper.xml ${GENIE}/config/Messenger.xml && \
+    sed -i '$ d' ${GENIE}/config/Messenger.xml && \
+    echo '  <priority msgstream="ResonanceDecay">      FATAL </priority>' >> ${GENIE}/config/Messenger.xml && \
+    echo '  <priority msgstream="Pythia6Decay">        FATAL </priority>' >> ${GENIE}/config/Messenger.xml && \
+    echo '  <priority msgstream="INukeNucleonCorr">    FATAL </priority>' >> ${GENIE}/config/Messenger.xml && \
+    echo '  <priority msgstream="gevgen_fnal">         FATAL </priority>' >> ${GENIE}/config/Messenger.xml && \
+    echo '</messenger_config>' >> ${GENIE}/config/Messenger.xml
