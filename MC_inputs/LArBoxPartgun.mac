@@ -1,0 +1,26 @@
+## Pick the particle
+/gps/particle _PART_
+
+## Not everything is LAr
+/edep/phys/ionizationModel 0
+/edep/update
+
+## Generate a uniform distribution (in K.E.) between EMIN and EMAX
+/gps/ene/type Lin
+/gps/ene/gradient 0
+/gps/ene/intercept 1
+/gps/ene/min _EMIN_ MeV
+/gps/ene/max _EMAX_ MeV
+
+## Define where to start particles from, and their direction
+/gps/position 0.0 0.0 0.0 cm
+
+## Generate isotropically
+/gps/ang/type iso
+
+/random/setSeeds _RAND1_ _RAND2_
+
+## Only one particle per vertex
+/gps/number 1
+
+## Set number of events with -e for /run/beamOn in the command line
