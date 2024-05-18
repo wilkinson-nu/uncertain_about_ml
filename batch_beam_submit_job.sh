@@ -2,7 +2,7 @@
 
 ## If I want to pile more on later
 FIRST_JOB=0
-LAST_JOB=9
+LAST_JOB=99
 
 ## Which neutrino flavors to produce
 NU_PDG_ARR=( -16 -14 -12 12 14 16 )
