@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --image=docker:wilkinsonnu/nuisance_project:geniev340_g4_sim
+#SBATCH --image=docker:wilkinsonnu/larcv2:ub20.04-cuda12.1-pytorch2.2.1-larndsim-genie
 #SBATCH --qos=shared
 #SBATCH --constraint=cpu
 #SBATCH --time=600
@@ -17,10 +17,10 @@ FLUX_HIST=__FLUX_HIST__
 NU_PDG=__NU_PDG__
 
 ## Fixed
-NEVTS=1000
+NEVTS=10000
 THIS_EDEP_MAC=LArBoxBeam.mac
 TUNE=AR23_20i_00_000
-GEOM_FILE=LArBoxSim.gdml
+GEOM_FILE=BigLArCube.gdml
 
 ## To calculate from inputs (recalculate with: gmxpl -f ${GEOM_FILE} -L cm -D g_cm3 -o ${GEOM_FILE/.gdml/_maxpath.xml} -n 10000 -r 1000 --seed 0)
 MAXPATH_FILE=${GEOM_FILE/.gdml/_maxpath.xml}
@@ -36,7 +36,7 @@ cp -r ${INPUTS_DIR}/* .
 
 ## The flux string is doing a loooot of work here
 shifter -V ${PWD}:/output --entrypoint gevgen_fnal \
-	-f "${FLUX_FILE},${NU_PDG}[${FLUX_HIST}];r=1000,dir=(0,0,1),spot=(0,0,-3000)" \
+	-f "${FLUX_FILE},${NU_PDG}[${FLUX_HIST}]" \
 	-g ${GEOM_FILE} \
 	-m ${MAXPATH_FILE} \
 	-L cm -D g_cm3 \
@@ -44,6 +44,11 @@ shifter -V ${PWD}:/output --entrypoint gevgen_fnal \
 	--cross-sections ${TUNE}_v340_splines.xml.gz \
 	--tune ${TUNE} \
 	--seed ${THIS_SEED}
+
+## The above generates neutrinos traveling in the direction 0,0,1 from the point 0,0,0
+## More fancy things can be done with flux arguments like:
+## 	-f "${FLUX_FILE},${NU_PDG}[${FLUX_HIST}];r=1000,dir=(0,0,1),spot=(0,0,-3000)" \
+
 
 ## Convert to rootracker
 shifter -V ${PWD}:/output --entrypoint gntpc \

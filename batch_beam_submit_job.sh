@@ -2,13 +2,13 @@
 
 ## If I want to pile more on later
 FIRST_JOB=0
-LAST_JOB=99
+LAST_JOB=19
 
 ## Which neutrino flavors to produce
 NU_PDG_ARR=( -16 -14 -12 12 14 16 )
 
 TEMPLATE=batch_beam_TEMPLATE.sh
-OUTDIR_ROOT=/global/cfs/cdirs/dune/users/cwilk/LArBoxSim
+OUTDIR_ROOT=/global/cfs/cdirs/dune/users/cwilk/LArBoxSim/BEAM
 INPUTS_DIR=/global/homes/c/cwilk/LArBoxSim/MC_inputs
 FLUX_FILE=DUNE_OptimizedEngineeredNov2017_REGULAR.root
 
@@ -26,9 +26,9 @@ for NU_PDG in "${NU_PDG_ARR[@]}"; do
     for N in $(seq ${FIRST_JOB} ${LAST_JOB})
     do
 	## Get the relevant file number
-	printf -v PADJOB "%04d" ${N}
+	printf -v PADJOB "%03d" ${N}
 	
-	OUTFILE="LArBoxSim_${NU_PDG}_1k_${PADJOB}.root"
+	OUTFILE="LArBoxSim_${NU_PDG}_10k_${PADJOB}.root"
 	
 	if [ -f "${OUTDIR_ROOT}/EDEPSIM/${OUTFILE/.root/_EDEPSIM.root}" ]; then
 	    continue
